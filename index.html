@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Andreani Tracker - Escáner de Código de Barras</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    ANDREANI TRACKER
+  </div>
+  <div class="header-stats">
+    <span>TOTAL: <span class="stat-val" id="stat-total">0</span></span>
+    <span>PENDIENTES: <span class="stat-val" id="stat-pending">0</span></span>
+    <span>DESPACHADOS: <span class="stat-val" id="stat-dispatched">0</span></span>
+  </div>
+</header>
+
+<div class="main">
+  <div class="panel-left">
+    <div class="panel-section">
+      <div class="section-label">Cargar PDF</div>
+      <div class="upload-zone" id="dropzone">
+        <input type="file" id="pdfInput" accept=".pdf" multiple>
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">
+          <strong>Seleccioná</strong> o arrastrá un PDF<br>
+          Etiquetas Andreani
+        </div>
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Procesando...</div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">Escáner de Código de Barras</div>
+      <div class="scanner-container">
+        <div class="scanner-header">
+          <span class="scanner-title">📷 Cámara</span>
+          <div class="scanner-controls">
+            <button class="scanner-btn" id="startScannerBtn">Iniciar</button>
+            <button class="scanner-btn" id="stopScannerBtn">Detener</button>
+          </div>
+        </div>
+        <div id="interactive" class="viewport"></div>
+        <video id="preview" style="display: none;"></video>
+      </div>
+      <div class="scan-input-wrap">
+        <input type="text" id="scanInput" class="scan-input" placeholder="O escribir N° seguimiento" autocomplete="off">
+        <button class="scan-btn" id="manualScanBtn">⏎</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">Filtrar</div>
+      <div class="filter-btns">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="pending">Pendientes</button>
+        <button class="filter-btn" data-filter="dispatched">Despachados</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">Acciones</div>
+      <div class="action-btns">
+        <button class="action-btn" id="exportBtn">📥 Exportar CSV</button>
+        <button class="action-btn" id="resetDispatchedBtn">↩ Resetear despachados</button>
+        <button class="action-btn danger" id="clearAllBtn">🗑 Limpiar todo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="table-header">
+      <span class="table-title">ENVÍOS REGISTRADOS</span>
+      <span class="total-badge" id="visibleCount">0 resultados</span>
+    </div>
+    <div class="table-wrap" id="tableWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📦</div>
+        <div class="empty-text">Sin envíos cargados.<br>Subí un PDF para comenzar.</div>
+      </div>
+      <table id="mainTable" style="display:none;">
+        <thead>
+          <tr><th>N° INTERNO</th><th>DESTINATARIO</th><th>N° SEGUIMIENTO</th><th>ESTADO</th><th>CARGADO</th><th></th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="modal-bg" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">⚠ Confirmar acción</div>
+    <div class="modal-text" id="modalText"></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" id="cancelModalBtn">Cancelar</button>
+      <button class="modal-btn modal-btn-danger" id="confirmModalBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="log-panel" id="logPanel"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/pdfProcessor.js"></script>
+<script src="js/barcodeScanner.js"></script>
+<script src="js/uiController.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
