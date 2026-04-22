@@ -1,22 +1,26 @@
 import os
+from pathlib import Path
 
 class Config:
-    # CockroachDB URL desde variables de entorno
-    DATABASE_URL = os.environ.get('DATABASE_URL', '')
+    # Base directory (backend/)
+    BASE_DIR = Path(__file__).parent
     
-    # Para Render, la URL viene con 'postgresql://' pero CockroachDB usa 'postgresql://'
-    # Asegurar que tiene el formato correcto
-    if DATABASE_URL and 'cockroachlabs' in DATABASE_URL:
-        # CockroachDB necesita parámetros especiales
-        DATABASE_URL = DATABASE_URL + '&sslmode=verify-full'
+    # URL base de CockroachDB (sin parámetros SSL)
+    DATABASE_URL = os.environ.get('DATABASE_URL', '').split('?')[0]
+    
+    # Ruta al certificado
+    SSL_CERT_PATH = BASE_DIR / 'certs' / 'root.crt'
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_size": 10,
+        "pool_size": 5,
         "pool_recycle": 3600,
-        "pool_pre_ping": True
+        "pool_pre_ping": True,
+        "connect_args": {
+            "sslmode": "verify-full",
+            "sslrootcert": str(SSL_CERT_PATH)
+        }
     }
     
-    # Configuración CORS para Render
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
