@@ -25,12 +25,35 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 480px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: 14px;
   min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 12px;
+  }
 }
 
 header {
@@ -43,6 +66,23 @@ header {
   top: 0;
   background: var(--bg);
   z-index: 100;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  header {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 12px;
+  }
 }
 
 .logo {
@@ -54,6 +94,20 @@ header {
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .logo {
+    font-size: 13px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 12px;
+    gap: 6px;
+  }
 }
 
 .logo-dot {
@@ -74,12 +128,46 @@ header {
   color: var(--text2);
 }
 
+@media (max-width: 768px) {
+  .header-stats {
+    gap: 12px;
+    font-size: 11px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-stats {
+    gap: 10px;
+    font-size: 10px;
+  }
+}
+
 .stat-val { color: var(--text); font-weight: 500; }
 
 .main {
   display: grid;
   grid-template-columns: 380px 1fr;
   height: calc(100vh - 57px);
+  gap: 0;
+}
+
+/* Responsive - Tablets y Pantallas Medianas */
+@media (max-width: 1024px) {
+  .main {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+/* Responsive - Dispositivos Móviles */
+@media (max-width: 768px) {
+  .main {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: calc(100vh - 57px);
+  }
 }
 
 .panel-left {
@@ -90,9 +178,30 @@ header {
   overflow-y: auto;
 }
 
+@media (max-width: 768px) {
+  .panel-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: auto;
+    max-height: 50vh;
+  }
+}
+
 .panel-section {
   padding: 20px;
   border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .panel-section {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-section {
+    padding: 12px;
+  }
 }
 
 .section-label {
@@ -105,6 +214,20 @@ header {
   margin-bottom: 14px;
 }
 
+@media (max-width: 768px) {
+  .section-label {
+    font-size: 9px;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-label {
+    font-size: 8px;
+    margin-bottom: 8px;
+  }
+}
+
 .upload-zone {
   border: 1px dashed var(--border2);
   border-radius: 6px;
@@ -113,6 +236,18 @@ header {
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .upload-zone {
+    padding: 18px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-zone {
+    padding: 14px 10px;
+  }
 }
 
 .upload-zone:hover, .upload-zone.drag-over {
@@ -133,6 +268,19 @@ header {
 
 .upload-text { color: var(--text2); font-size: 13px; line-height: 1.6; }
 .upload-text strong { color: var(--green); font-weight: 500; }
+
+@media (max-width: 768px) {
+  .upload-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-text {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+}
 
 .progress-wrap {
   display: none;
@@ -176,6 +324,13 @@ header {
   border-bottom: 1px solid var(--border);
 }
 
+@media (max-width: 480px) {
+  .scanner-header {
+    padding: 8px;
+    gap: 8px;
+  }
+}
+
 .scanner-title {
   font-family: var(--mono);
   font-size: 11px;
@@ -185,6 +340,12 @@ header {
 .scanner-controls {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .scanner-controls {
+    gap: 6px;
+  }
 }
 
 .scanner-btn {
@@ -197,6 +358,13 @@ header {
   font-size: 10px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+@media (max-width: 480px) {
+  .scanner-btn {
+    padding: 3px 8px;
+    font-size: 9px;
+  }
 }
 
 .scanner-btn:hover {
@@ -217,6 +385,18 @@ header {
   background: #000;
   position: relative;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .viewport {
+    height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .viewport {
+    height: 160px;
+  }
 }
 
 .viewport canvas,
@@ -281,6 +461,20 @@ header {
   transition: border-color 0.2s;
 }
 
+@media (max-width: 768px) {
+  .scan-input {
+    padding: 10px 40px 10px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scan-input {
+    padding: 9px 36px 9px 10px;
+    font-size: 12px;
+  }
+}
+
 .scan-input:focus { border-color: var(--green); }
 .scan-input::placeholder { color: var(--text3); }
 
@@ -299,6 +493,12 @@ header {
   gap: 6px;
 }
 
+@media (max-width: 480px) {
+  .filter-btns {
+    gap: 4px;
+  }
+}
+
 .filter-btn {
   flex: 1; padding: 8px;
   background: var(--surface2); border: 1px solid var(--border);
@@ -306,6 +506,20 @@ header {
   font-size: 12px; font-family: var(--mono);
   cursor: pointer; transition: all 0.15s;
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .filter-btn {
+    padding: 6px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-btn {
+    padding: 6px;
+    font-size: 10px;
+  }
 }
 
 .filter-btn.active {
@@ -316,6 +530,18 @@ header {
 
 .action-btns { display: flex; flex-direction: column; gap: 8px; }
 
+@media (max-width: 768px) {
+  .action-btns {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-btns {
+    gap: 5px;
+  }
+}
+
 .action-btn {
   width: 100%; padding: 10px 14px;
   background: var(--surface2); border: 1px solid var(--border);
@@ -323,6 +549,21 @@ header {
   font-size: 12px; font-family: var(--mono);
   cursor: pointer; transition: all 0.15s;
   display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .action-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-btn {
+    padding: 8px 10px;
+    font-size: 10px;
+    gap: 6px;
+  }
 }
 
 .action-btn:hover { border-color: var(--border2); color: var(--text); }
@@ -334,12 +575,35 @@ header {
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .panel-right {
+    min-height: 50vh;
+  }
+}
+
 .table-header {
   padding: 16px 28px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .table-header {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-header {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .table-title {
@@ -347,6 +611,18 @@ header {
   font-size: 12px;
   color: var(--text2);
   letter-spacing: 0.06em;
+}
+
+@media (max-width: 768px) {
+  .table-title {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-title {
+    font-size: 10px;
+  }
 }
 
 .total-badge {
@@ -361,9 +637,21 @@ header {
 
 .table-wrap { overflow-y: auto; flex: 1; }
 
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+@media (max-width: 768px) {
+  table {
+    min-width: 600px;
+  }
 }
 
 thead tr {
@@ -384,10 +672,38 @@ th {
   white-space: nowrap;
 }
 
+@media (max-width: 768px) {
+  th {
+    padding: 8px 12px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  th {
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+}
+
 td {
   padding: 13px 20px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  td {
+    padding: 8px 8px;
+    font-size: 12px;
+  }
 }
 
 tbody tr.dispatched td {
@@ -424,6 +740,14 @@ tbody tr.dispatched td {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .badge-status {
+    padding: 2px 6px;
+    font-size: 8px;
+    gap: 4px;
+  }
 }
 
 .badge-pending {
@@ -472,8 +796,35 @@ tbody tr.dispatched td {
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  .empty-state {
+    gap: 8px;
+  }
+}
+
 .empty-icon { font-size: 48px; opacity: 0.3; }
 .empty-text { font-family: var(--mono); font-size: 12px; line-height: 1.8; }
+
+@media (max-width: 768px) {
+  .empty-icon {
+    font-size: 40px;
+  }
+  
+  .empty-text {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .empty-icon {
+    font-size: 32px;
+  }
+  
+  .empty-text {
+    font-size: 10px;
+    line-height: 1.6;
+  }
+}
 
 #toast {
   position: fixed;
@@ -491,6 +842,27 @@ tbody tr.dispatched td {
   display: flex; align-items: center; gap: 8px;
   border: 1px solid;
   max-width: 360px;
+}
+
+@media (max-width: 768px) {
+  #toast {
+    bottom: 16px;
+    right: 16px;
+    left: auto;
+    max-width: calc(100% - 32px);
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  #toast {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: calc(100% - 24px);
+    font-size: 11px;
+    padding: 10px 14px;
+  }
 }
 
 #toast.show { opacity: 1; transform: translateY(0); }
@@ -534,6 +906,22 @@ tbody tr.dispatched td {
   width: 340px;
 }
 
+@media (max-width: 768px) {
+  .modal-box {
+    width: 90%;
+    max-width: 340px;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-box {
+    width: 95%;
+    max-width: 280px;
+    padding: 20px;
+  }
+}
+
 .modal-title {
   font-family: var(--mono);
   font-size: 14px;
@@ -541,8 +929,27 @@ tbody tr.dispatched td {
   margin-bottom: 10px;
 }
 
+@media (max-width: 480px) {
+  .modal-title {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+}
+
 .modal-text { color: var(--text2); font-size: 13px; line-height: 1.6; margin-bottom: 22px; }
 .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+
+@media (max-width: 480px) {
+  .modal-text {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .modal-btns {
+    gap: 8px;
+    flex-direction: column;
+  }
+}
 
 .modal-btn {
   padding: 9px 20px;
@@ -551,6 +958,13 @@ tbody tr.dispatched td {
   font-size: 13px;
   font-family: var(--mono);
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .modal-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
 }
 
 .modal-btn-cancel {
