@@ -5,6 +5,21 @@ from config import Config
 from datetime import datetime
 import os
 
+# Esto evita el error de versión de CockroachDB
+from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+
+original_get_server_version = PGDialect_psycopg2._get_server_version_info
+
+def patched_get_server_version(self, connection):
+    try:
+        return original_get_server_version(self, connection)
+    except AssertionError:
+        # Para CockroachDB, devolvemos una versión fija
+        print("⚠️ Detectada CockroachDB, usando versión fija (25.4.1)")
+        return (25, 4, 1)
+
+PGDialect_psycopg2._get_server_version_info = patched_get_server_version
+
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.config.from_object(Config)
 CORS(app, origins=Config.CORS_ORIGINS)
