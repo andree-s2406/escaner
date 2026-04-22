@@ -24,6 +24,21 @@ app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.config.from_object(Config)
 CORS(app, origins=Config.CORS_ORIGINS)
 
+# ==================== RUTA PRINCIPAL ====================
+@app.route('/')
+def home():
+    return jsonify({
+        "status": "ok",
+        "message": "Andreani Tracker API está funcionando",
+        "endpoints": {
+            "GET /api/envios": "Listar todos los envíos",
+            "POST /api/envios": "Crear un envío",
+            "PUT /api/envios/<tn>/despachar": "Marcar como despachado",
+            "DELETE /api/envios/<id>": "Eliminar envío",
+            "GET /api/stats": "Estadísticas"
+        }
+    })
+
 db.init_app(app)
 
 # Crear tablas al iniciar
