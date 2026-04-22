@@ -2,5 +2,7 @@ flask==2.3.3
 flask-cors==4.0.0
 flask-sqlalchemy==3.0.5
 psycopg2-binary==2.9.9
-sqlalchemy==2.0.19
+sqlalchemy==1.4.46
 gunicorn==21.2.0
+PyMuPDF==1.23.8
+typing-extensions==4.8.0
