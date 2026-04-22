@@ -20,24 +20,9 @@ def patched_get_server_version(self, connection):
 PGDialect_psycopg2._get_server_version_info = patched_get_server_version
 # ==================== FIN PARCHE ====================
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
+app = Flask(__name__, static_folder='.', static_url_path='')
 app.config.from_object(Config)
 CORS(app, origins=Config.CORS_ORIGINS)
-
-# ==================== RUTA PRINCIPAL ====================
-@app.route('/')
-def home():
-    return jsonify({
-        "status": "ok",
-        "message": "Andreani Tracker API está funcionando",
-        "endpoints": {
-            "GET /api/envios": "Listar todos los envíos",
-            "POST /api/envios": "Crear un envío",
-            "PUT /api/envios/<tn>/despachar": "Marcar como despachado",
-            "DELETE /api/envios/<id>": "Eliminar envío",
-            "GET /api/stats": "Estadísticas"
-        }
-    })
 
 db.init_app(app)
 
@@ -49,15 +34,15 @@ with app.app_context():
 # ==================== SERVIR FRONTEND ====================
 @app.route('/')
 def serve_frontend():
-    return send_from_directory('../frontend', 'index.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/css/<path:filename>')
 def serve_css(filename):
-    return send_from_directory('../frontend/css', filename)
+    return send_from_directory('css', filename)
 
 @app.route('/js/<path:filename>')
 def serve_js(filename):
-    return send_from_directory('../frontend/js', filename)
+    return send_from_directory('js', filename)
 
 # ==================== API ENDPOINTS ====================
 @app.route('/api/envios', methods=['GET'])
