@@ -1,7 +1,5 @@
-// API Client - Detecta automáticamente el entorno
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000/api'
-    : window.location.origin + '/api';
+// API Client - Usar rutas relativas (funciona en local y producción)
+const API_URL = '/api';
 
 class API {
     static async request(endpoint, options = {}) {
