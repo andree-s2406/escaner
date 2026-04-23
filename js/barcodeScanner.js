@@ -51,23 +51,30 @@ function startScanner() {
         },
         locator: {
             patchSize: "medium",
-            halfSample: true
+            halfSample: true,
+            debug: {
+                drawBoundingBox: false,
+                showFrequency: false,
+                drawScanline: false,
+                showPattern: false
+            }
         },
         numOfWorkers: 2,
         decoder: {
             readers: [
                 "code_128_reader",
-                "ean_reader", 
+                "ean_reader",
                 "ean_8_reader",
                 "code_39_reader",
                 "code_93_reader",
                 "codabar_reader",
                 "upc_reader",
-                "upc_e_reader",
-                "i2of5_reader"
-            ]
+                "upc_e_reader"
+            ],
+            multiple: false
         },
-        locate: true
+        locate: true,
+        frequency: 10
     }, function(err) {
         if (err) {
             addLog(`❌ Error al iniciar Quagga: ${err}`);
@@ -122,7 +129,17 @@ async function processScannedBarcode(barcode) {
         return;
     }
     
+    // ========== FILTRAR CÓDIGOS NO VÁLIDOS ==========
+    // Los códigos de Andreani son solo números de 15-20 dígitos
     const cleanBarcode = String(barcode).replace(/[\s-]/g, '');
+    
+    // Verificar si es solo números y tiene entre 15 y 20 dígitos
+    if (!/^\d{15,20}$/.test(cleanBarcode)) {
+        addLog(`⚠ Código ignorado (no es número de seguimiento válido): ${cleanBarcode}`);
+        showToast(`Código no válido. Debe ser un número de 15-20 dígitos.`, 'err');
+        return;
+    }
+    
     addLog(`🔍 Procesando código: ${cleanBarcode}`);
     
     if (!window.envios) {
