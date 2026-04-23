@@ -78,40 +78,24 @@ function setupEventListeners() {
     if (window.addLog) window.addLog(`✅ Event listeners configurados`);
 }
 
-function initApp() {
+async function initApp() {
     if (window.addLog) window.addLog(`🚀 Inicializando aplicación...`);
     
-    // Cargar datos
-    if (window.loadFromStorage) {
-        window.envios = window.loadFromStorage();
+    // Asegurar que window.envios sea un array
+    if (!window.envios || !Array.isArray(window.envios)) {
+        window.envios = [];
     }
+    
+    // Cargar datos desde la API
+    await window.loadFromStorage();
+    
     window.currentFilter = 'all';
     
-    // Renderizar UI
-    if (window.renderTable) window.renderTable();
-    if (window.updateStats) window.updateStats();
+    await window.renderTable();
+    await window.updateStats();
     
-    // Configurar eventos
     setupEventListeners();
     
-    // Configurar el input de PDFs correctamente
-    const pdfInput = document.getElementById('pdfInput');
-    if (pdfInput) {
-        // Remover listeners anteriores
-        const newInput = pdfInput.cloneNode(true);
-        pdfInput.parentNode.replaceChild(newInput, pdfInput);
-        
-        // Agregar el listener nuevo
-        newInput.addEventListener('change', (e) => {
-            console.log("📄 Archivos seleccionados:", e.target.files.length);
-            if (e.target.files.length && window.processPDFs) {
-                window.processPDFs(Array.from(e.target.files));
-            }
-            e.target.value = '';
-        });
-    }
-    
-    // Enfocar input
     const scanInput = document.getElementById('scanInput');
     if (scanInput) scanInput.focus();
     
@@ -122,5 +106,7 @@ function initApp() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    initApp();
+    initApp().catch(err => {
+        if (window.addLog) window.addLog(`❌ Error al inicializar: ${err.message}`);
+    });
 }

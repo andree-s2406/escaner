@@ -7,16 +7,19 @@ if (typeof pdfjsLib !== 'undefined') {
 }
 
 async function processPDFs(files) {
-    if (window.addLog) window.addLog(`📄 Procesando ${files.length} archivo(s) PDF...`);
-    
-    const progressWrap = document.getElementById('progressWrap');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-
-    if (!progressWrap) {
-        if (window.addLog) window.addLog(`❌ No se encontró progressWrap`);
-        return;
+    // ========== VERIFICAR QUE window.envios SEA UN ARRAY ==========
+    if (!window.envios || !Array.isArray(window.envios)) {
+        console.warn("⚠️ window.envios no es un array, inicializando...");
+        window.envios = [];
+        if (window.loadFromStorage) {
+            await window.loadFromStorage();
+        }
+        if (!window.envios || !Array.isArray(window.envios)) {
+            window.envios = [];
+        }
     }
+    
+    if (window.addLog) window.addLog(`📄 Procesando ${files.length} archivo(s) PDF...`);
 
     progressWrap.style.display = 'block';
     let totalNuevos = 0;

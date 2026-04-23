@@ -1,7 +1,9 @@
 // ==================== STORAGE MODULE CON API ====================
 
 // Variables globales
-window.envios = [];
+if (!window.envios || !Array.isArray(window.envios)) {
+    window.envios = [];
+}
 window.currentFilter = 'all';
 
 window.addLog = function(msg) {
@@ -12,11 +14,12 @@ window.addLog = function(msg) {
 async function loadFromStorage() {
     try {
         const data = await API.getEnvios();
-        window.envios = data;
+        window.envios = Array.isArray(data) ? data : [];
         if (window.addLog) window.addLog(`📦 Cargados ${window.envios.length} envíos desde la API`);
         return window.envios;
     } catch (error) {
         if (window.addLog) window.addLog(`❌ Error cargando desde API: ${error}`);
+        window.envios = [];
         return [];
     }
 }
