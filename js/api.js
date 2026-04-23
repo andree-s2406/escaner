@@ -54,8 +54,8 @@ class API {
         return response;
     }
     
-    static async despacharEnvio(numero_interno, tn) {
-        const response = await this.request(`/envios/${numero_interno}/despachar?tn=${tn}`, {
+    static async despacharEnvio(tn) {
+        const response = await this.request(`/envios/${tn}/despachar`, {
             method: 'PUT'
         });
         return response.data;

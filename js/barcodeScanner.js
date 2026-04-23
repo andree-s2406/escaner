@@ -144,23 +144,19 @@ async function processScannedBarcode(barcode) {
         return;
     }
     
-    // ========== LLAMAR A LA API PARA DESPACHAR ==========
+    // ========== USAR EL MÉTODO DE API ==========
     try {
         addLog(`🔄 Llamando a API para despachar: ${cleanBarcode}`);
         
-        const response = await fetch(`http://localhost:5000/api/envios/${cleanBarcode}/despachar`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' }
-        });
+        // Usar el método existente de API
+        const result = await API.despacharEnvio(cleanBarcode);
         
-        const data = await response.json();
-        
-        if (data.success) {
+        if (result.success) {
             // Actualizar localmente
             envio.estado = 'despachado';
             envio.fechaDespacho = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
             
-            // Recargar datos desde la API para asegurar consistencia
+            // Recargar datos desde la API
             if (window.loadFromStorage) await window.loadFromStorage();
             if (window.renderTable) await window.renderTable();
             if (window.updateStats) await window.updateStats();
@@ -177,7 +173,7 @@ async function processScannedBarcode(barcode) {
             addLog(`✅ Despachado: ${envio.numeroInterno} - ${envio.destinatario}`);
             showToast(`✓ Despachado: ${envio.numeroInterno} — ${envio.destinatario}`, 'ok');
         } else {
-            throw new Error(data.error || 'Error al despachar');
+            throw new Error('Error al despachar');
         }
     } catch (error) {
         addLog(`❌ Error al despachar: ${error.message}`);
