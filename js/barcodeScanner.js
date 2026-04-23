@@ -129,8 +129,7 @@ async function processScannedBarcode(barcode) {
         return;
     }
     
-    // ========== FILTRAR CÓDIGOS NO VÁLIDOS ==========
-    // Los códigos de Andreani son solo números de 15-20 dígitos
+
     const cleanBarcode = String(barcode).replace(/[\s-]/g, '');
     
     // Verificar si es solo números y tiene entre 15 y 20 dígitos

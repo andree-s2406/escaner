@@ -4,10 +4,8 @@ from pathlib import Path
 class Config:
     BASE_DIR = Path(__file__).parent
     
-    # URL sin parámetros SSL
     DATABASE_URL = os.environ.get('DATABASE_URL', '').split('?')[0]
     
-    # Ruta al certificado
     SSL_CERT_PATH = BASE_DIR / 'certs' / 'root.crt'
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL

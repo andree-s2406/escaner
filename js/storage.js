@@ -1,21 +1,18 @@
 // ==================== STORAGE MODULE CON API ====================
 
-// Variables globales
-if (!window.envios || !Array.isArray(window.envios)) {
-    window.envios = [];
-}
+window.envios = [];
 window.currentFilter = 'all';
+window.diasFiltro = 7;
 
 window.addLog = function(msg) {
     console.log(msg);
 };
 
-// Cargar desde la API
 async function loadFromStorage() {
     try {
-        const data = await API.getEnvios();
+        const data = await API.getEnvios(null, window.diasFiltro);
         window.envios = Array.isArray(data) ? data : [];
-        if (window.addLog) window.addLog(`📦 Cargados ${window.envios.length} envíos desde la API`);
+        if (window.addLog) window.addLog(`📦 Cargados ${window.envios.length} envíos de los últimos ${window.diasFiltro} días`);
         return window.envios;
     } catch (error) {
         if (window.addLog) window.addLog(`❌ Error cargando desde API: ${error}`);
@@ -24,12 +21,10 @@ async function loadFromStorage() {
     }
 }
 
-// Guardar en la API (placeholder)
 async function saveToStorage() {
     if (window.addLog) window.addLog(`💾 Datos sincronizados con la API`);
 }
 
-// Agregar envío usando la API
 async function addEnvio(envioData) {
     try {
         const nuevo = await API.createEnvio(envioData);
@@ -42,7 +37,6 @@ async function addEnvio(envioData) {
     }
 }
 
-// Agregar múltiples envíos en batch
 async function addEnviosBatch(enviosData) {
     try {
         const result = await API.createEnviosBatch(enviosData);
@@ -55,25 +49,28 @@ async function addEnviosBatch(enviosData) {
     }
 }
 
-async function despacharEnvio(numero_interno, tn) {
+async function despacharEnvio(tn) {
     try {
-        const envioActualizado = await API.despacharEnvio(numero_interno, tn);
-        const index = window.envios.findIndex(e => e.numeroInterno === numero_interno);
-        if (index !== -1) {
-            window.envios[index] = envioActualizado;
+        const result = await API.despacharEnvio(tn);
+        if (result.success) {
+            const index = window.envios.findIndex(e => e.tn === tn);
+            if (index !== -1) {
+                window.envios[index].estado = 'despachado';
+                window.envios[index].fechaDespacho = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+            }
+            if (window.addLog) window.addLog(`✅ Despachado: ${tn}`);
+            return true;
         }
-        if (window.addLog) window.addLog(`✅ Despachado: ${numero_interno} -> ${tn}`);
-        return true;
+        return false;
     } catch (error) {
         if (window.addLog) window.addLog(`❌ Error al despachar: ${error.message}`);
         return false;
     }
 }
+
 async function actualizarEnvio(numero_interno, tn) {
     try {
-        // Limpiar aquí también
         const numeroLimpio = String(numero_interno).replace('#', '');
-        
         const envioActualizado = await API.actualizarEnvio(numeroLimpio, tn);
         
         const index = window.envios.findIndex(e => e.numeroInterno === numero_interno);
@@ -89,13 +86,37 @@ async function actualizarEnvio(numero_interno, tn) {
     }
 }
 
-window.actualizarEnvio = actualizarEnvio;
-// Eliminar envío usando la API
+async function limpiarEnviosAntiguos() {
+    try {
+        const response = await API.limpiarAntiguos();
+        if (response.success && response.eliminados > 0) {
+            if (window.addLog) window.addLog(`🗑 Limpieza: ${response.eliminados} envíos eliminados`);
+            await loadFromStorage();
+            if (window.renderTable) await window.renderTable();
+            if (window.updateStats) await window.updateStats();
+        }
+        return response;
+    } catch (error) {
+        if (window.addLog) window.addLog(`❌ Error al limpiar: ${error.message}`);
+        return false;
+    }
+}
+
+async function setFiltroDias(dias) {
+    window.diasFiltro = dias;
+    if (window.addLog) window.addLog(`🔄 Cambiando filtro a últimos ${dias} días`);
+    await loadFromStorage();
+    if (window.renderTable) await window.renderTable();
+    if (window.updateStats) await window.updateStats();
+}
+
 async function deleteEnvio(id) {
     try {
         await API.deleteEnvio(id);
         window.envios = window.envios.filter(e => e.id !== id);
         if (window.addLog) window.addLog(`🗑 Eliminado envío ID: ${id}`);
+        if (window.renderTable) await window.renderTable();
+        if (window.updateStats) await window.updateStats();
         return true;
     } catch (error) {
         if (window.addLog) window.addLog(`❌ Error al eliminar: ${error.message}`);
@@ -103,7 +124,6 @@ async function deleteEnvio(id) {
     }
 }
 
-// Resetear despachados usando la API
 async function resetAllDispatched() {
     try {
         const count = await API.resetDespachados();
@@ -116,7 +136,6 @@ async function resetAllDispatched() {
     }
 }
 
-// Limpiar todos usando la API
 async function clearAllEnvios() {
     try {
         await API.clearAll();
@@ -135,7 +154,6 @@ function getFilteredEnvios() {
     return window.envios;
 }
 
-// ============ NUEVA FUNCIÓN ============
 async function updateStatsFromAPI() {
     try {
         const stats = await API.getStats();
@@ -152,6 +170,9 @@ window.saveToStorage = saveToStorage;
 window.addEnvio = addEnvio;
 window.addEnviosBatch = addEnviosBatch;
 window.despacharEnvio = despacharEnvio;
+window.actualizarEnvio = actualizarEnvio;
+window.limpiarEnviosAntiguos = limpiarEnviosAntiguos;
+window.setFiltroDias = setFiltroDias;
 window.deleteEnvio = deleteEnvio;
 window.resetAllDispatched = resetAllDispatched;
 window.clearAllEnvios = clearAllEnvios;

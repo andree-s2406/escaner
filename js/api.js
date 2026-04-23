@@ -1,4 +1,4 @@
-// API Client - Usar rutas relativas (funciona en local y producción)
+// API Client - Usar rutas relativas
 const API_URL = '/api';
 
 class API {
@@ -25,8 +25,15 @@ class API {
         }
     }
     
-    static async getEnvios(estado = null) {
-        const url = estado ? `/envios?estado=${estado}` : '/envios';
+    static async getEnvios(estado = null, dias = null) {
+        let url = '/envios';
+        const params = [];
+        
+        if (estado) params.push(`estado=${estado}`);
+        if (dias) params.push(`dias=${dias}`);
+        
+        if (params.length) url += '?' + params.join('&');
+        
         const response = await this.request(url);
         return response.data;
     }
@@ -65,6 +72,13 @@ class API {
             body: JSON.stringify({ tn: tn })
         });
         return response.data;
+    }
+    
+    static async limpiarAntiguos() {
+        const response = await this.request('/envios/limpiar-antiguos', {
+            method: 'DELETE'
+        });
+        return response;
     }
     
     static async deleteEnvio(id) {

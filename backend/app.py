@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from models import db, Envio
 from config import Config
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 # ==================== PARCHE PARA COCKROACHDB ====================
@@ -32,7 +32,6 @@ with app.app_context():
     print("✅ Base de datos conectada y tablas creadas")
 
 # ==================== SERVIR FRONTEND ====================
-# IMPORTANTE: Los archivos están en la raíz, un nivel arriba de backend/
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @app.route('/')
@@ -51,11 +50,21 @@ def serve_js(filename):
 @app.route('/api/envios', methods=['GET'])
 def get_envios():
     estado = request.args.get('estado')
+    dias = request.args.get('dias')
     
+    query = Envio.query
+    
+    # Filtrar por estado
     if estado:
-        envios = Envio.query.filter_by(estado=estado).order_by(Envio.fecha_carga.desc()).all()
-    else:
-        envios = Envio.query.order_by(Envio.fecha_carga.desc()).all()
+        query = query.filter_by(estado=estado)
+    
+    # Filtrar por días (últimos N días)
+    if dias and dias.isdigit():
+        fecha_limite = datetime.now() - timedelta(days=int(dias))
+        query = query.filter(Envio.fecha_carga >= fecha_limite)
+        print(f"📅 Mostrando envíos de los últimos {dias} días")
+    
+    envios = query.order_by(Envio.fecha_carga.desc()).all()
     
     return jsonify({
         'success': True,
@@ -104,7 +113,6 @@ def create_envios_batch():
     for envio_data in envios_data:
         tn = envio_data.get('tn', '')
         
-        # Solo verificar duplicado si tn NO está vacío
         if tn and tn.strip():
             existe = Envio.query.filter_by(tn=tn).first()
             if existe:
@@ -132,7 +140,6 @@ def create_envios_batch():
 
 @app.route('/api/envios/<string:numero_interno>/actualizar', methods=['PUT'])
 def actualizar_envio(numero_interno):
-    # Buscar por numero_interno (con o sin #)
     envio = Envio.query.filter_by(numero_interno=numero_interno).first()
     if not envio and not numero_interno.startswith('#'):
         envio = Envio.query.filter_by(numero_interno=f"#{numero_interno}").first()
@@ -165,6 +172,29 @@ def despachar_envio(tn):
     db.session.commit()
     
     return jsonify({'success': True, 'data': envio.to_dict()})
+
+@app.route('/api/envios/limpiar-antiguos', methods=['DELETE'])
+def limpiar_envios_antiguos():
+    """Elimina envíos que tengan más de 30 días"""
+    try:
+        fecha_limite = datetime.now() - timedelta(days=30)
+        antiguos = Envio.query.filter(Envio.fecha_carga < fecha_limite).all()
+        count = len(antiguos)
+        
+        for envio in antiguos:
+            db.session.delete(envio)
+        
+        db.session.commit()
+        print(f"🗑 Limpieza automática: {count} envíos eliminados (más de 30 días)")
+        
+        return jsonify({
+            'success': True,
+            'eliminados': count,
+            'mensaje': f'Se eliminaron {count} envíos antiguos'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/envios/<string:id>', methods=['DELETE'])
 def delete_envio(id):
