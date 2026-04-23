@@ -8,10 +8,8 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_size": 5,
         "pool_recycle": 3600,
-        "pool_pre_ping": True,
-        "connect_args": {
-            "sslmode": "require"
-        }
+        "pool_pre_ping": True
     }
     
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
+    # Permitir TODOS los orígenes para desarrollo
+    CORS_ORIGINS = '*'

@@ -8,7 +8,7 @@ class Envio(db.Model):
     __tablename__ = 'envios'
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    tn = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    tn = db.Column(db.String(20), nullable=True)  # Quitar unique=True
     numero_interno = db.Column(db.String(20), nullable=True)
     destinatario = db.Column(db.String(200), nullable=False)
     estado = db.Column(db.String(20), default='pendiente', index=True)

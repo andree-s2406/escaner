@@ -10,29 +10,8 @@ function escapeHtml(str) {
     });
 }
 
-function addLog(msg) {
-    console.log(msg);
-    const logPanel = document.getElementById('logPanel');
-    if (logPanel) {
-        const time = new Date().toLocaleTimeString();
-        const logEntry = document.createElement('div');
-        logEntry.textContent = `[${time}] ${msg}`;
-        logEntry.style.fontFamily = 'monospace';
-        logEntry.style.fontSize = '10px';
-        logEntry.style.borderBottom = '1px solid #333';
-        logEntry.style.padding = '2px 0';
-        logPanel.appendChild(logEntry);
-        logPanel.scrollTop = logPanel.scrollHeight;
-        
-        // Limitar a 100 líneas
-        while (logPanel.children.length > 100) {
-            logPanel.removeChild(logPanel.children[0]);
-        }
-    }
-}
-
-function renderTable() {
-    addLog(`🔄 Renderizando tabla...`);
+async function renderTable() {
+    if (window.addLog) window.addLog(`🔄 Renderizando tabla...`);
     
     const tbody = document.getElementById('tableBody');
     const emptyState = document.getElementById('emptyState');
@@ -41,7 +20,7 @@ function renderTable() {
 
     if (!tbody) return;
 
-    const filtrados = window.getFilteredEnvios();
+    const filtrados = await window.getFilteredEnvios();
     
     if (visibleCount) {
         visibleCount.textContent = `${filtrados.length} resultado${filtrados.length !== 1 ? 's' : ''}`;
@@ -72,35 +51,33 @@ function renderTable() {
         </tr>`;
     }).join('');
     
-    addLog(`✅ Tabla renderizada: ${filtrados.length} elementos`);
+    if (window.addLog) window.addLog(`✅ Tabla renderizada: ${filtrados.length} elementos`);
 }
 
-function updateStats() {
-    const total = window.envios ? window.envios.length : 0;
-    const pending = window.envios ? window.envios.filter(e => e.estado === 'pendiente').length : 0;
-    const dispatched = window.envios ? window.envios.filter(e => e.estado === 'despachado').length : 0;
+async function updateStats() {
+    const stats = await window.updateStatsFromAPI();
     
     const statTotal = document.getElementById('stat-total');
     const statPending = document.getElementById('stat-pending');
     const statDispatched = document.getElementById('stat-dispatched');
     
-    if (statTotal) statTotal.textContent = total;
-    if (statPending) statPending.textContent = pending;
-    if (statDispatched) statDispatched.textContent = dispatched;
+    if (statTotal) statTotal.textContent = stats.total;
+    if (statPending) statPending.textContent = stats.pendientes;
+    if (statDispatched) statDispatched.textContent = stats.despachados;
     
-    addLog(`📊 Stats: Total=${total}, Pendientes=${pending}, Despachados=${dispatched}`);
+    if (window.addLog) window.addLog(`📊 Stats: Total=${stats.total}, Pendientes=${stats.pendientes}, Despachados=${stats.despachados}`);
 }
 
-function setFilter(filter) {
+async function setFilter(filter) {
     window.currentFilter = filter;
-    addLog(`🔍 Filtro cambiado a: ${filter}`);
+    if (window.addLog) window.addLog(`🔍 Filtro cambiado a: ${filter}`);
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.getAttribute('data-filter') === filter) {
             btn.classList.add('active');
         }
     });
-    renderTable();
+    await renderTable();
 }
 
 function exportCSV() {
@@ -126,48 +103,52 @@ function exportCSV() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    addLog(`📥 CSV exportado`);
+    if (window.addLog) window.addLog(`📥 CSV exportado`);
     if (window.showToast) window.showToast('✓ CSV exportado', 'ok');
 }
 
-function confirmClearAll() {
+async function confirmClearAll() {
     if (confirm('¿Eliminar TODOS los envíos? Esta acción no se puede deshacer.')) {
-        if (window.clearAllEnvios) window.clearAllEnvios();
-        renderTable();
-        updateStats();
+        await window.clearAllEnvios();
+        await renderTable();
+        await updateStats();
         if (window.showToast) window.showToast('Base de datos limpiada', 'info');
     }
 }
 
-function resetDispatched() {
-    if (!window.resetAllDispatched) return;
-    const count = window.resetAllDispatched();
+async function resetDispatched() {
+    const count = await window.resetAllDispatched();
     if (count === 0) {
         if (window.showToast) window.showToast('No hay envíos despachados', 'info');
         return;
     }
-    renderTable();
-    updateStats();
+    await renderTable();
+    await updateStats();
     if (window.showToast) window.showToast(`↩ ${count} envío(s) restablecidos a pendiente`, 'ok');
 }
 
 // Handler global para eliminar envíos
-window.deleteEnvioHandler = function(id) {
-    if (window.deleteEnvio) window.deleteEnvio(id);
-    renderTable();
-    updateStats();
+window.deleteEnvioHandler = async function(id) {
+    await window.deleteEnvio(id);
+    await renderTable();
+    await updateStats();
     if (window.showToast) window.showToast('Envío eliminado', 'info');
 };
 
 let toastTimer;
 function showToast(msg, type = 'info') {
-    addLog(`TOAST [${type}]: ${msg}`);
+    if (window.addLog) window.addLog(`TOAST [${type}]: ${msg}`);
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = msg;
     t.className = `show toast-${type}`;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500);
+}
+
+function addLog(msg) {
+    console.log(msg);
+    // Opcional: mostrar en un panel visible
 }
 
 // Exportar funciones globales

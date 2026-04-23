@@ -94,6 +94,23 @@ function initApp() {
     // Configurar eventos
     setupEventListeners();
     
+    // Configurar el input de PDFs correctamente
+    const pdfInput = document.getElementById('pdfInput');
+    if (pdfInput) {
+        // Remover listeners anteriores
+        const newInput = pdfInput.cloneNode(true);
+        pdfInput.parentNode.replaceChild(newInput, pdfInput);
+        
+        // Agregar el listener nuevo
+        newInput.addEventListener('change', (e) => {
+            console.log("📄 Archivos seleccionados:", e.target.files.length);
+            if (e.target.files.length && window.processPDFs) {
+                window.processPDFs(Array.from(e.target.files));
+            }
+            e.target.value = '';
+        });
+    }
+    
     // Enfocar input
     const scanInput = document.getElementById('scanInput');
     if (scanInput) scanInput.focus();

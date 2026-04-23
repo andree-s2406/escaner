@@ -41,11 +41,11 @@ function startScanner() {
         inputStream: {
             name: "Live",
             type: "LiveStream",
-            target: document.querySelector('#interactive'), // ID del div contenedor
+            target: document.querySelector('#interactive'),
             constraints: {
                 width: { min: 640 },
                 height: { min: 480 },
-                facingMode: "environment", // Usar cámara trasera
+                facingMode: "environment",
                 aspectRatio: { min: 1, max: 2 }
             }
         },
@@ -109,7 +109,6 @@ function stopScanner() {
         const startBtn = document.getElementById('startScannerBtn');
         if (startBtn) startBtn.classList.remove('active');
         
-        // Limpiar el div del viewport
         const interactive = document.getElementById('interactive');
         if (interactive) {
             interactive.innerHTML = '';
@@ -117,7 +116,7 @@ function stopScanner() {
     }
 }
 
-function processScannedBarcode(barcode) {
+async function processScannedBarcode(barcode) {
     if (!barcode) {
         addLog(`⚠ Código vacío escaneado`);
         return;
@@ -145,25 +144,45 @@ function processScannedBarcode(barcode) {
         return;
     }
     
-    // Marcar como despachado
-    envio.estado = 'despachado';
-    envio.fechaDespacho = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
-    
-    if (window.saveToStorage) window.saveToStorage();
-    if (window.renderTable) window.renderTable();
-    if (window.updateStats) window.updateStats();
-    
-    // Efecto visual
-    setTimeout(() => {
-        const row = document.querySelector(`tr[data-id="${envio.id}"]`);
-        if (row) {
-            row.classList.add('flash-row');
-            setTimeout(() => row.classList.remove('flash-row'), 1300);
+    // ========== LLAMAR A LA API PARA DESPACHAR ==========
+    try {
+        addLog(`🔄 Llamando a API para despachar: ${cleanBarcode}`);
+        
+        const response = await fetch(`http://localhost:5000/api/envios/${cleanBarcode}/despachar`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar localmente
+            envio.estado = 'despachado';
+            envio.fechaDespacho = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+            
+            // Recargar datos desde la API para asegurar consistencia
+            if (window.loadFromStorage) await window.loadFromStorage();
+            if (window.renderTable) await window.renderTable();
+            if (window.updateStats) await window.updateStats();
+            
+            // Efecto visual
+            setTimeout(() => {
+                const row = document.querySelector(`tr[data-id="${envio.id}"]`);
+                if (row) {
+                    row.classList.add('flash-row');
+                    setTimeout(() => row.classList.remove('flash-row'), 1300);
+                }
+            }, 50);
+            
+            addLog(`✅ Despachado: ${envio.numeroInterno} - ${envio.destinatario}`);
+            showToast(`✓ Despachado: ${envio.numeroInterno} — ${envio.destinatario}`, 'ok');
+        } else {
+            throw new Error(data.error || 'Error al despachar');
         }
-    }, 50);
-    
-    addLog(`✅ Despachado: ${envio.numeroInterno} - ${envio.destinatario}`);
-    showToast(`✓ Despachado: ${envio.numeroInterno} — ${envio.destinatario}`, 'ok');
+    } catch (error) {
+        addLog(`❌ Error al despachar: ${error.message}`);
+        showToast(`Error al despachar: ${error.message}`, 'err');
+    }
 }
 
 function manualScan() {
