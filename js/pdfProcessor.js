@@ -52,89 +52,46 @@ async function processPDFs(files) {
             if (window.addLog) window.addLog(`🔍 Tipo de PDF detectado: ${tipoPDF}`);
             
             if (tipoPDF === 'tienda_nube') {
-                // Procesar como Tienda Nube
+                // ========== PROCESAR TIENDA NUBE ==========
                 const ordenes = extraerDeTiendaNube(textoCompleto);
+                const nuevosEnvios = [];
                 
                 for (const orden of ordenes) {
                     const existe = window.envios.find(e => e.numeroInterno === orden.numero_orden);
                     if (!existe) {
-                        const nuevoEnvio = {
-                            id: Date.now() + Math.random() + Math.random(),
+                        nuevosEnvios.push({
                             tn: '',
                             numeroInterno: orden.numero_orden,
                             destinatario: orden.destinatario,
                             estado: 'pendiente',
                             fechaCarga: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
                             fechaDespacho: null
-                        };
-                        window.envios.push(nuevoEnvio);
+                        });
                         totalNuevos++;
-                        if (window.addLog) window.addLog(`✅ Nueva orden: ${orden.numero_orden} - ${orden.destinatario}`);
+                        if (window.addLog) window.addLog(`📋 Tienda Nube: ${orden.numero_orden} - ${orden.destinatario}`);
                     } else {
                         totalDuplicados++;
                         if (window.addLog) window.addLog(`⚠ Orden ya existe: ${orden.numero_orden}`);
                     }
                 }
+                
+                // Guardar en la base de datos
+                if (nuevosEnvios.length > 0 && window.addEnviosBatch) {
+                    const resultado = await window.addEnviosBatch(nuevosEnvios);
+                    if (window.addLog) window.addLog(`✅ Guardados: ${resultado} nuevos`);
+                }
+                
             } else if (tipoPDF === 'andreani') {
-                // Procesar como Andreani
                 const enviosAndreani = extraerDeAndreani(textoCompleto);
                 
-                for (const envio of enviosAndreani) {
-                    // Buscar si ya existe un envío con ese número de orden
-                    const existente = window.envios.find(e => e.numeroInterno === envio.numero_orden);
+                for (const item of enviosAndreani) {
+                    const pedidoExistente = window.envios.find(e => e.numeroInterno === item.numero_orden);
                     
-                    if (existente) {
-                        // ACTUALIZAR el registro existente
-                        if (!existente.tn || existente.tn === '') {
-                            existente.tn = envio.tn;
-                            totalActualizados++;
-                            if (window.addLog) window.addLog(`🔗 Vinculado: ${envio.numero_orden} -> ${envio.tn}`);
-                        } else if (existente.tn === envio.tn) {
-                            totalDuplicados++;
-                            if (window.addLog) window.addLog(`⚠ TN ya existe: ${envio.tn}`);
-                        } else {
-                            // Si tiene un TN diferente, crear nuevo
-                            const yaExisteTN = window.envios.find(e => e.tn === envio.tn);
-                            if (!yaExisteTN) {
-                                const nuevoEnvio = {
-                                    id: Date.now() + Math.random() + Math.random(),
-                                    tn: envio.tn,
-                                    numeroInterno: envio.numero_orden,
-                                    destinatario: envio.destinatario,
-                                    estado: 'pendiente',
-                                    fechaCarga: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-                                    fechaDespacho: null
-                                };
-                                window.envios.push(nuevoEnvio);
-                                totalNuevos++;
-                                if (window.addLog) window.addLog(`✅ Nuevo (TN diferente): ${envio.numero_orden} - ${envio.tn}`);
-                            } else {
-                                totalDuplicados++;
-                                if (window.addLog) window.addLog(`⚠ TN duplicado: ${envio.tn}`);
-                            }
-                        }
-                    } else {
-                        // CREAR NUEVO registro
-                        const yaExisteTN = window.envios.find(e => e.tn === envio.tn);
-                        if (!yaExisteTN) {
-                            const nuevoEnvio = {
-                                id: Date.now() + Math.random() + Math.random(),
-                                tn: envio.tn,
-                                numeroInterno: envio.numero_orden,
-                                destinatario: envio.destinatario,
-                                estado: 'pendiente',
-                                fechaCarga: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-                                fechaDespacho: null
-                            };
-                            window.envios.push(nuevoEnvio);
-                            totalNuevos++;
-                            if (window.addLog) window.addLog(`✅ Nuevo envío Andreani: ${envio.numero_orden} - ${envio.destinatario} - ${envio.tn}`);
-                        } else {
-                            totalDuplicados++;
-                            if (window.addLog) window.addLog(`⚠ TN duplicado: ${envio.tn}`);
-                        }
+                    if (pedidoExistente && (!pedidoExistente.tn || pedidoExistente.tn === '')) {
+                        await window.actualizarEnvio(item.numero_orden, item.tn);
                     }
                 }
+                
             } else {
                 if (window.addLog) window.addLog(`❌ Tipo de PDF no reconocido`);
                 if (window.showToast) window.showToast('PDF no reconocido', 'err');
@@ -149,9 +106,16 @@ async function processPDFs(files) {
     progressWrap.style.display = 'none';
     progressFill.style.width = '0%';
     
-    if (window.saveToStorage) window.saveToStorage();
-    if (window.renderTable) window.renderTable();
-    if (window.updateStats) window.updateStats();
+    // Recargar datos desde la API para actualizar la tabla
+    if (window.loadFromStorage) {
+        await window.loadFromStorage();
+    }
+    if (window.renderTable) {
+        await window.renderTable();
+    }
+    if (window.updateStats) {
+        await window.updateStats();
+    }
 
     let mensaje = '';
     if (totalNuevos > 0) mensaje += `✓ ${totalNuevos} nuevo(s)`;
@@ -202,43 +166,34 @@ function extraerDeTiendaNube(texto) {
         // Buscar "Entregar a:" o "Enviar a:" en el bloque
         let destinatario = 'Desconocido';
         
-        // Patrón 1: "Entregar a: Nombre"
         const matchEntregar = bloque.match(/Entregar\s*a:\s*([^\n]+)/i);
         if (matchEntregar) {
             destinatario = matchEntregar[1].trim();
         } else {
-            // Patrón 2: "Enviar a: Nombre"
             const matchEnviar = bloque.match(/Enviar\s*a:\s*([^\n]+)/i);
             if (matchEnviar) {
                 destinatario = matchEnviar[1].trim();
             } else {
-                // Buscar en líneas
                 const lineas = bloque.split('\n');
                 for (let j = 0; j < lineas.length; j++) {
                     const linea = lineas[j];
-                    
-                    // Buscar "Entregar a:"
                     if (linea.toLowerCase().includes('entregar a:')) {
                         const partes = linea.split(/entregar\s*a:/i);
                         if (partes[1] && partes[1].trim()) {
                             destinatario = partes[1].trim();
                             break;
                         }
-                        // O en la siguiente línea
                         if (j + 1 < lineas.length && lineas[j + 1].trim()) {
                             destinatario = lineas[j + 1].trim();
                             break;
                         }
                     }
-                    
-                    // Buscar "Enviar a:"
                     if (linea.toLowerCase().includes('enviar a:')) {
                         const partes = linea.split(/enviar\s*a:/i);
                         if (partes[1] && partes[1].trim()) {
                             destinatario = partes[1].trim();
                             break;
                         }
-                        // O en la siguiente línea
                         if (j + 1 < lineas.length && lineas[j + 1].trim()) {
                             destinatario = lineas[j + 1].trim();
                             break;
@@ -248,11 +203,9 @@ function extraerDeTiendaNube(texto) {
             }
         }
         
-        // Limpiar destinatario (quitar teléfono si aparece)
         destinatario = destinatario.replace(/Tel[ée]fono[:\s]*.*$/i, '').trim();
         destinatario = destinatario.replace(/\d{6,}.*$/, '').trim();
         
-        // Si el destinatario está vacío o muy corto, usar "Desconocido"
         if (!destinatario || destinatario.length < 3) {
             destinatario = 'Desconocido';
         }
@@ -272,7 +225,6 @@ function extraerDeAndreani(texto) {
     const resultados = [];
     const tnVistos = new Set();
     
-    // Buscar todos los números de seguimiento (15-20 dígitos)
     const tnRegex = /\b(\d{15,20})\b/g;
     const tnMatches = [...texto.matchAll(tnRegex)];
     
@@ -285,23 +237,17 @@ function extraerDeAndreani(texto) {
         tnVistos.add(tn);
         
         const index = tnMatch.index;
-        
-        // Extraer contexto (500 caracteres alrededor)
         const inicio = Math.max(0, index - 500);
         const fin = Math.min(texto.length, index + 500);
         const contexto = texto.substring(inicio, fin);
         
-        // Buscar número de orden en el contexto (formato #5530)
         let numeroOrden = '—';
         const ordenMatch = contexto.match(/#(\d{4,10})/);
         if (ordenMatch) {
             numeroOrden = `#${ordenMatch[1]}`;
         }
         
-        // Buscar destinatario en el contexto
         let destinatario = 'Desconocido';
-        
-        // Patrones para destinatario en etiquetas Andreani
         const patrones = [
             /Entregar\s*a:\s*([A-Za-zÁÉÍÓÚÑáéíóúñ\s\.]+?)(?:\n|Tel|$)/i,
             /Enviar\s*a:\s*([A-Za-zÁÉÍÓÚÑáéíóúñ\s\.]+?)(?:\n|Tel|$)/i,
@@ -317,7 +263,6 @@ function extraerDeAndreani(texto) {
             }
         }
         
-        // Limpiar destinatario
         destinatario = destinatario.replace(/Tel[ée]fono.*$/i, '').trim();
         destinatario = destinatario.replace(/\d{6,}.*$/, '').trim();
         
@@ -337,7 +282,6 @@ function extraerDeAndreani(texto) {
     return resultados;
 }
 
-// Mantener compatibilidad con código existente
 function extractAndreaniData(texto) {
     const envios = extraerDeAndreani(texto);
     return envios.map(e => ({

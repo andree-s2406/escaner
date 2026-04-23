@@ -1,5 +1,5 @@
 // API Client - Detecta automáticamente el entorno
-const API_URL = window.location.origin + '/api';
+const API_URL = 'http://localhost:5000/api';
 
 class API {
     static async request(endpoint, options = {}) {
@@ -20,7 +20,6 @@ class API {
             
             return data;
         } catch (error) {
-            console.error('API Error:', error);
             throw error;
         }
     }
@@ -44,6 +43,7 @@ class API {
         return response.data;
     }
     
+    // ========== NUEVO MÉTODO ==========
     static async createEnviosBatch(envios) {
         const response = await this.request('/envios/batch', {
             method: 'POST',
@@ -51,11 +51,16 @@ class API {
         });
         return response;
     }
+    // =================================
     
-    static async despacharEnvio(tn) {
-        const response = await this.request(`/envios/${tn}/despachar`, {
-            method: 'PUT'
+    static async actualizarEnvio(numero_interno, tn) {
+        const numeroLimpio = String(numero_interno).replace('#', '');
+        
+        const response = await this.request(`/envios/${numeroLimpio}/actualizar`, {
+            method: 'PUT',
+            body: JSON.stringify({ tn: tn })
         });
+
         return response.data;
     }
     

@@ -102,19 +102,24 @@ def create_envios_batch():
     duplicados = []
     
     for envio_data in envios_data:
-        existe = Envio.query.filter_by(tn=envio_data['tn']).first()
-        if existe:
-            duplicados.append(envio_data['tn'])
-        else:
-            nuevo = Envio(
-                tn=envio_data['tn'],
-                numero_interno=envio_data.get('numeroInterno', '—'),
-                destinatario=envio_data['destinatario'],
-                estado='pendiente',
-                fecha_carga=datetime.now()
-            )
-            db.session.add(nuevo)
-            nuevos.append(nuevo)
+        tn = envio_data.get('tn', '')
+        
+        # Solo verificar duplicado si tn NO está vacío
+        if tn and tn.strip():
+            existe = Envio.query.filter_by(tn=tn).first()
+            if existe:
+                duplicados.append(tn)
+                continue
+        
+        nuevo = Envio(
+            tn=tn,
+            numero_interno=envio_data.get('numeroInterno', '—'),
+            destinatario=envio_data['destinatario'],
+            estado='pendiente',
+            fecha_carga=datetime.now()
+        )
+        db.session.add(nuevo)
+        nuevos.append(nuevo)
     
     db.session.commit()
     
@@ -124,6 +129,26 @@ def create_envios_batch():
         'duplicados': len(duplicados),
         'data': [e.to_dict() for e in nuevos]
     })
+
+@app.route('/api/envios/<string:numero_interno>/actualizar', methods=['PUT'])
+def actualizar_envio(numero_interno):
+    # Buscar por numero_interno (con o sin #)
+    envio = Envio.query.filter_by(numero_interno=numero_interno).first()
+    if not envio and not numero_interno.startswith('#'):
+        envio = Envio.query.filter_by(numero_interno=f"#{numero_interno}").first()
+    
+    if not envio:
+        return jsonify({'success': False, 'error': 'Envío no encontrado'}), 404
+    
+    data = request.json
+    tn = data.get('tn')
+    
+    if tn:
+        envio.tn = tn
+    
+    db.session.commit()
+    
+    return jsonify({'success': True, 'data': envio.to_dict()})
 
 @app.route('/api/envios/<string:tn>/despachar', methods=['PUT'])
 def despachar_envio(tn):
