@@ -7,6 +7,17 @@ if (typeof pdfjsLib !== 'undefined') {
 }
 
 async function processPDFs(files) {
+    // ========== OBTENER REFERENCIAS A LOS ELEMENTOS ==========
+    const progressWrap = document.getElementById('progressWrap');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    if (!progressWrap) {
+        console.error("❌ No se encontró progressWrap");
+        if (window.addLog) window.addLog(`❌ No se encontró progressWrap`);
+        return;
+    }
+    
     // ========== VERIFICAR QUE window.envios SEA UN ARRAY ==========
     if (!window.envios || !Array.isArray(window.envios)) {
         console.warn("⚠️ window.envios no es un array, inicializando...");
@@ -62,39 +73,69 @@ async function processPDFs(files) {
                 for (const orden of ordenes) {
                     const existe = window.envios.find(e => e.numeroInterno === orden.numero_orden);
                     if (!existe) {
+                        const tnValue = orden.esShowroom ? orden.tn_especial : '';
+                        
                         nuevosEnvios.push({
-                            tn: '',
+                            tn: tnValue,
                             numeroInterno: orden.numero_orden,
                             destinatario: orden.destinatario,
-                            estado: 'pendiente',
+                            estado: orden.esShowroom ? 'despachado' : 'pendiente',
                             fechaCarga: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-                            fechaDespacho: null
+                            fechaDespacho: orden.esShowroom ? new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : null
                         });
                         totalNuevos++;
-                        if (window.addLog) window.addLog(`📋 Tienda Nube: ${orden.numero_orden} - ${orden.destinatario}`);
+                        if (orden.esShowroom) {
+                            if (window.addLog) window.addLog(`🏢 SHOWROOM: ${orden.numero_orden} - ${orden.destinatario} - ${orden.tn_especial}`);
+                        } else {
+                            if (window.addLog) window.addLog(`📋 Tienda Nube: ${orden.numero_orden} - ${orden.destinatario}`);
+                        }
                     } else {
                         totalDuplicados++;
                         if (window.addLog) window.addLog(`⚠ Orden ya existe: ${orden.numero_orden}`);
                     }
                 }
                 
-                // Guardar en la base de datos
                 if (nuevosEnvios.length > 0 && window.addEnviosBatch) {
                     const resultado = await window.addEnviosBatch(nuevosEnvios);
                     if (window.addLog) window.addLog(`✅ Guardados: ${resultado} nuevos`);
                 }
                 
             } else if (tipoPDF === 'andreani') {
+                // ========== PROCESAR ANDREANI ==========
                 const enviosAndreani = extraerDeAndreani(textoCompleto);
+                let vinculados = 0;
                 
                 for (const item of enviosAndreani) {
                     const pedidoExistente = window.envios.find(e => e.numeroInterno === item.numero_orden);
                     
                     if (pedidoExistente && (!pedidoExistente.tn || pedidoExistente.tn === '')) {
                         await window.actualizarEnvio(item.numero_orden, item.tn);
+                        vinculados++;
+                        totalActualizados++;
+                        if (window.addLog) window.addLog(`🔗 Vinculado: ${item.numero_orden} -> ${item.tn}`);
+                    } else if (pedidoExistente && pedidoExistente.tn === item.tn) {
+                        totalDuplicados++;
+                        if (window.addLog) window.addLog(`⚠ Ya vinculado: ${item.numero_orden} -> ${item.tn}`);
+                    } else if (!pedidoExistente) {
+                        const nuevoEnvio = {
+                            tn: item.tn,
+                            numeroInterno: item.numero_orden,
+                            destinatario: item.destinatario,
+                            estado: 'pendiente',
+                            fechaCarga: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+                            fechaDespacho: null
+                        };
+                        if (window.addEnvio) {
+                            await window.addEnvio(nuevoEnvio);
+                            totalNuevos++;
+                            if (window.addLog) window.addLog(`✅ Nuevo envío Andreani: ${item.numero_orden} - ${item.destinatario} - ${item.tn}`);
+                        }
                     }
                 }
                 
+                if (vinculados > 0 && window.showToast) {
+                    window.showToast(`🔗 Se vincularon ${vinculados} seguimientos`, 'ok');
+                }
             } else {
                 if (window.addLog) window.addLog(`❌ Tipo de PDF no reconocido`);
                 if (window.showToast) window.showToast('PDF no reconocido', 'err');
@@ -109,7 +150,6 @@ async function processPDFs(files) {
     progressWrap.style.display = 'none';
     progressFill.style.width = '0%';
     
-    // Recargar datos desde la API para actualizar la tabla
     if (window.loadFromStorage) {
         await window.loadFromStorage();
     }
@@ -135,12 +175,14 @@ async function processPDFs(files) {
 }
 
 function detectarTipoPDF(texto) {
-    // Detectar Tienda Nube: contiene "Orden #"
+    if (!texto || typeof texto !== 'string') {
+        return 'desconocido';
+    }
+    
     if (texto.match(/Orden\s*#\d+/i)) {
         return 'tienda_nube';
     }
     
-    // Detectar Andreani: contiene números de 15-20 dígitos
     if (texto.match(/\b\d{15,20}\b/)) {
         return 'andreani';
     }
@@ -149,16 +191,19 @@ function detectarTipoPDF(texto) {
 }
 
 function extraerDeTiendaNube(texto) {
+    if (!texto || typeof texto !== 'string') {
+        console.warn("extraerDeTiendaNube: texto no válido");
+        return [];
+    }
+    
     const resultados = [];
     const ordenesVistas = new Set();
     
-    // Dividir por "Orden #" para procesar cada orden por separado
     const bloques = texto.split(/Orden\s*#/i);
     
     for (let i = 1; i < bloques.length; i++) {
         const bloque = bloques[i];
         
-        // Extraer número de orden (primeros dígitos del bloque)
         const matchOrden = bloque.match(/^(\d+)/);
         if (!matchOrden) continue;
         
@@ -166,7 +211,22 @@ function extraerDeTiendaNube(texto) {
         if (ordenesVistas.has(numOrden)) continue;
         ordenesVistas.add(numOrden);
         
-        // Buscar "Entregar a:" o "Enviar a:" en el bloque
+        let esShowroom = false;
+        let tipoRetiro = '';
+        
+        if (bloque.match(/Dirección\s*de\s*retiro:/i)) {
+            const lineas = bloque.split('\n');
+            for (let j = 0; j < lineas.length; j++) {
+                const linea = lineas[j];
+                if (linea.toLowerCase().includes('showrrom') || 
+                    linea.toLowerCase().includes('showroom')) {
+                    esShowroom = true;
+                    tipoRetiro = 'Retiro en showroom';
+                    break;
+                }
+            }
+        }
+        
         let destinatario = 'Desconocido';
         
         const matchEntregar = bloque.match(/Entregar\s*a:\s*([^\n]+)/i);
@@ -213,18 +273,34 @@ function extraerDeTiendaNube(texto) {
             destinatario = 'Desconocido';
         }
         
-        resultados.push({
-            numero_orden: `#${numOrden}`,
-            destinatario: destinatario
-        });
-        
-        if (window.addLog) window.addLog(`📋 Tienda Nube: #${numOrden} - ${destinatario}`);
+        if (esShowroom) {
+            resultados.push({
+                numero_orden: `#${numOrden}`,
+                destinatario: destinatario,
+                esShowroom: true,
+                tn_especial: tipoRetiro
+            });
+            if (window.addLog) window.addLog(`🏢 Tienda Nube (SHOWROOM): #${numOrden} - ${destinatario} - ${tipoRetiro}`);
+        } else {
+            resultados.push({
+                numero_orden: `#${numOrden}`,
+                destinatario: destinatario,
+                esShowroom: false,
+                tn_especial: null
+            });
+            if (window.addLog) window.addLog(`📋 Tienda Nube: #${numOrden} - ${destinatario}`);
+        }
     }
     
     return resultados;
 }
 
 function extraerDeAndreani(texto) {
+    if (!texto || typeof texto !== 'string') {
+        console.warn("extraerDeAndreani: texto no válido");
+        return [];
+    }
+    
     const resultados = [];
     const tnVistos = new Set();
     

@@ -21,6 +21,7 @@ class API {
             return data;
         } catch (error) {
             console.error('API Error:', error);
+            if (window.addLog) window.addLog();
             throw error;
         }
     }

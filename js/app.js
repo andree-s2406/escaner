@@ -1,7 +1,6 @@
 // App Module - Inicialización con API
 
 async function initApp() {
-    if (window.addLog) window.addLog(`🚀 Inicializando aplicación...`);
     
     // Limpiar envíos antiguos (solo una vez por día)
     const ultimaLimpieza = localStorage.getItem('ultima_limpieza');
@@ -27,58 +26,52 @@ async function initApp() {
     const scanInput = document.getElementById('scanInput');
     if (scanInput) scanInput.focus();
     
-    if (window.addLog) window.addLog(`✅ Aplicación inicializada con ${window.envios.length} envíos`);
 }
 
 function setupEventListeners() {
-    if (window.addLog) window.addLog(`🔧 Configurando event listeners...`);
     
     // PDF Input
     const pdfInput = document.getElementById('pdfInput');
     if (pdfInput) {
-        const newInput = pdfInput.cloneNode(true);
-        pdfInput.parentNode.replaceChild(newInput, pdfInput);
-        
-        newInput.addEventListener('change', (e) => {
-            if (e.target.files.length && window.processPDFs) {
+        pdfInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length && window.processPDFs) {
                 window.processPDFs(Array.from(e.target.files));
+                e.target.value = ''; // Limpiar después de procesar
             }
-            e.target.value = '';
         });
     }
     
     // Dropzone
     const dropzone = document.getElementById('dropzone');
     if (dropzone) {
-        const newDropzone = dropzone.cloneNode(true);
-        dropzone.parentNode.replaceChild(newDropzone, dropzone);
-        
-        newDropzone.addEventListener('dragover', (e) => {
+        dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            newDropzone.classList.add('drag-over');
+            e.stopPropagation();
+            dropzone.classList.add('drag-over');
         });
         
-        newDropzone.addEventListener('dragleave', () => {
-            newDropzone.classList.remove('drag-over');
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('drag-over');
         });
         
-        newDropzone.addEventListener('drop', (e) => {
+        dropzone.addEventListener('drop', (e) => {
             e.preventDefault();
-            newDropzone.classList.remove('drag-over');
+            e.stopPropagation();
+            dropzone.classList.remove('drag-over');
             const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
             if (files.length && window.processPDFs) {
                 window.processPDFs(files);
             }
         });
         
-        const input = newDropzone.querySelector('input');
-        if (input) {
-            newDropzone.addEventListener('click', (e) => {
-                if (e.target !== input) {
-                    input.click();
-                }
-            });
-        }
+        dropzone.addEventListener('click', (e) => {
+            const input = dropzone.querySelector('input[type="file"]');
+            if (input && e.target !== input) {
+                input.click();
+            }
+        });
     }
     
     // Escáner

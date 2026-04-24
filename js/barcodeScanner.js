@@ -2,7 +2,6 @@
 let scannerActive = false;
 
 function addLog(msg) {
-    console.log(msg);
     const logPanel = document.getElementById('logPanel');
     if (logPanel) {
         const time = new Date().toLocaleTimeString();

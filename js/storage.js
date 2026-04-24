@@ -12,27 +12,27 @@ async function loadFromStorage() {
     try {
         const data = await API.getEnvios(null, window.diasFiltro);
         window.envios = Array.isArray(data) ? data : [];
-        if (window.addLog) window.addLog(`📦 Cargados ${window.envios.length} envíos de los últimos ${window.diasFiltro} días`);
+        if (window.addLog) window.addLog();
         return window.envios;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error cargando desde API: ${error}`);
+        if (window.addLog) window.addLog();
         window.envios = [];
         return [];
     }
 }
 
 async function saveToStorage() {
-    if (window.addLog) window.addLog(`💾 Datos sincronizados con la API`);
+    if (window.addLog) window.addLog();
 }
 
 async function addEnvio(envioData) {
     try {
         const nuevo = await API.createEnvio(envioData);
         window.envios.push(nuevo);
-        if (window.addLog) window.addLog(`➕ Nuevo envío: ${nuevo.numeroInterno} - ${nuevo.destinatario}`);
+        if (window.addLog) window.addLog();
         return true;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al agregar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
@@ -41,10 +41,10 @@ async function addEnviosBatch(enviosData) {
     try {
         const result = await API.createEnviosBatch(enviosData);
         await loadFromStorage();
-        if (window.addLog) window.addLog(`✅ Agregados: ${result.nuevos}, Duplicados: ${result.duplicados}`);
+        if (window.addLog) window.addLog();
         return result.nuevos;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error en batch: ${error.message}`);
+        if (window.addLog) window.addLog();
         return 0;
     }
 }
@@ -58,12 +58,12 @@ async function despacharEnvio(tn) {
                 window.envios[index].estado = 'despachado';
                 window.envios[index].fechaDespacho = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
             }
-            if (window.addLog) window.addLog(`✅ Despachado: ${tn}`);
+            if (window.addLog) window.addLog();
             return true;
         }
         return false;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al despachar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
@@ -78,10 +78,10 @@ async function actualizarEnvio(numero_interno, tn) {
             window.envios[index] = envioActualizado;
         }
         
-        if (window.addLog) window.addLog(`✅ Actualizado: ${numero_interno} -> ${tn}`);
+        if (window.addLog) window.addLog();
         return true;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al actualizar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
@@ -90,21 +90,21 @@ async function limpiarEnviosAntiguos() {
     try {
         const response = await API.limpiarAntiguos();
         if (response.success && response.eliminados > 0) {
-            if (window.addLog) window.addLog(`🗑 Limpieza: ${response.eliminados} envíos eliminados`);
+            if (window.addLog) window.addLog();
             await loadFromStorage();
             if (window.renderTable) await window.renderTable();
             if (window.updateStats) await window.updateStats();
         }
         return response;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al limpiar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
 
 async function setFiltroDias(dias) {
     window.diasFiltro = dias;
-    if (window.addLog) window.addLog(`🔄 Cambiando filtro a últimos ${dias} días`);
+    if (window.addLog) window.addLog();
     await loadFromStorage();
     if (window.renderTable) await window.renderTable();
     if (window.updateStats) await window.updateStats();
@@ -119,7 +119,7 @@ async function deleteEnvio(id) {
         if (window.updateStats) await window.updateStats();
         return true;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al eliminar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
@@ -128,10 +128,10 @@ async function resetAllDispatched() {
     try {
         const count = await API.resetDespachados();
         await loadFromStorage();
-        if (window.addLog) window.addLog(`↩ Reseteados ${count} envíos despachados`);
+        if (window.addLog) window.addLog();
         return count;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al resetear: ${error.message}`);
+        if (window.addLog) window.addLog();
         return 0;
     }
 }
@@ -140,10 +140,10 @@ async function clearAllEnvios() {
     try {
         await API.clearAll();
         window.envios = [];
-        if (window.addLog) window.addLog(`🗑 Base de datos limpiada`);
+        if (window.addLog) window.addLog();
         return true;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error al limpiar: ${error.message}`);
+        if (window.addLog) window.addLog();
         return false;
     }
 }
@@ -159,7 +159,7 @@ async function updateStatsFromAPI() {
         const stats = await API.getStats();
         return stats;
     } catch (error) {
-        if (window.addLog) window.addLog(`❌ Error obteniendo stats: ${error.message}`);
+        if (window.addLog) window.addLog();
         return { total: 0, pendientes: 0, despachados: 0 };
     }
 }

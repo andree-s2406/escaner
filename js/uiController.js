@@ -11,7 +11,6 @@ function escapeHtml(str) {
 }
 
 async function renderTable() {
-    if (window.addLog) window.addLog(`🔄 Renderizando tabla...`);
     
     const tbody = document.getElementById('tableBody');
     const emptyState = document.getElementById('emptyState');
@@ -51,7 +50,6 @@ async function renderTable() {
         </tr>`;
     }).join('');
     
-    if (window.addLog) window.addLog(`✅ Tabla renderizada: ${filtrados.length} elementos`);
 }
 
 async function updateStats() {
@@ -65,12 +63,10 @@ async function updateStats() {
     if (statPending) statPending.textContent = stats.pendientes;
     if (statDispatched) statDispatched.textContent = stats.despachados;
     
-    if (window.addLog) window.addLog(`📊 Stats: Total=${stats.total}, Pendientes=${stats.pendientes}, Despachados=${stats.despachados}`);
 }
 
 async function setFilter(filter) {
     window.currentFilter = filter;
-    if (window.addLog) window.addLog(`🔍 Filtro cambiado a: ${filter}`);
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.getAttribute('data-filter') === filter) {
@@ -103,7 +99,6 @@ function exportCSV() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    if (window.addLog) window.addLog(`📥 CSV exportado`);
     if (window.showToast) window.showToast('✓ CSV exportado', 'ok');
 }
 
@@ -137,7 +132,6 @@ window.deleteEnvioHandler = async function(id) {
 
 let toastTimer;
 function showToast(msg, type = 'info') {
-    if (window.addLog) window.addLog(`TOAST [${type}]: ${msg}`);
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = msg;
@@ -146,10 +140,7 @@ function showToast(msg, type = 'info') {
     toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500);
 }
 
-function addLog(msg) {
-    console.log(msg);
-    // Opcional: mostrar en un panel visible
-}
+
 
 // Exportar funciones globales
 window.renderTable = renderTable;
