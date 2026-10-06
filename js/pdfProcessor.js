@@ -190,6 +190,64 @@ function detectarTipoPDF(texto) {
     return 'desconocido';
 }
 
+function extraerDestinatario(bloque) {
+    if (!bloque || typeof bloque !== 'string') {
+        return 'Desconocido';
+    }
+
+    const matchEntregar = bloque.match(/Entregar\s*a:\s*([^\n]+)/i);
+    const matchEnviar = bloque.match(/Enviar\s*a:\s*([^\n]+)/i);
+
+    let destinatario = matchEntregar?.[1]?.trim()
+        || matchEnviar?.[1]?.trim()
+        || 'Desconocido';
+
+    if (destinatario === 'Desconocido') {
+        const lineas = bloque.split('\n');
+
+        for (let j = 0; j < lineas.length; j++) {
+            const linea = lineas[j];
+
+            if (linea.toLowerCase().includes('entregar a:')) {
+                const partes = linea.split(/entregar\s*a:/i);
+
+                if (partes[1] && partes[1].trim()) {
+                    destinatario = partes[1].trim();
+                    break;
+                }
+
+                if (j + 1 < lineas.length && lineas[j + 1].trim()) {
+                    destinatario = lineas[j + 1].trim();
+                    break;
+                }
+            }
+
+            if (linea.toLowerCase().includes('enviar a:')) {
+                const partes = linea.split(/enviar\s*a:/i);
+
+                if (partes[1] && partes[1].trim()) {
+                    destinatario = partes[1].trim();
+                    break;
+                }
+
+                if (j + 1 < lineas.length && lineas[j + 1].trim()) {
+                    destinatario = lineas[j + 1].trim();
+                    break;
+                }
+            }
+        }
+    }
+
+    destinatario = destinatario.replace(/Tel[ée]fono[:\s]*.*$/i, '').trim();
+    destinatario = destinatario.replace(/\d{6,}.*$/, '').trim();
+
+    if (!destinatario || destinatario.length < 3) {
+        destinatario = 'Desconocido';
+    }
+
+    return destinatario;
+}
+
 function extraerDeTiendaNube(texto) {
     if (!texto || typeof texto !== 'string') {
         console.warn("extraerDeTiendaNube: texto no válido");
@@ -227,51 +285,7 @@ function extraerDeTiendaNube(texto) {
             }
         }
         
-        let destinatario = 'Desconocido';
-        
-        const matchEntregar = bloque.match(/Entregar\s*a:\s*([^\n]+)/i);
-        if (matchEntregar) {
-            destinatario = matchEntregar[1].trim();
-        } else {
-            const matchEnviar = bloque.match(/Enviar\s*a:\s*([^\n]+)/i);
-            if (matchEnviar) {
-                destinatario = matchEnviar[1].trim();
-            } else {
-                const lineas = bloque.split('\n');
-                for (let j = 0; j < lineas.length; j++) {
-                    const linea = lineas[j];
-                    if (linea.toLowerCase().includes('entregar a:')) {
-                        const partes = linea.split(/entregar\s*a:/i);
-                        if (partes[1] && partes[1].trim()) {
-                            destinatario = partes[1].trim();
-                            break;
-                        }
-                        if (j + 1 < lineas.length && lineas[j + 1].trim()) {
-                            destinatario = lineas[j + 1].trim();
-                            break;
-                        }
-                    }
-                    if (linea.toLowerCase().includes('enviar a:')) {
-                        const partes = linea.split(/enviar\s*a:/i);
-                        if (partes[1] && partes[1].trim()) {
-                            destinatario = partes[1].trim();
-                            break;
-                        }
-                        if (j + 1 < lineas.length && lineas[j + 1].trim()) {
-                            destinatario = lineas[j + 1].trim();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        
-        destinatario = destinatario.replace(/Tel[ée]fono[:\s]*.*$/i, '').trim();
-        destinatario = destinatario.replace(/\d{6,}.*$/, '').trim();
-        
-        if (!destinatario || destinatario.length < 3) {
-            destinatario = 'Desconocido';
-        }
+        const destinatario = extraerDestinatario(bloque);
         
         if (esShowroom) {
             resultados.push({
@@ -379,4 +393,5 @@ window.processPDFs = processPDFs;
 window.extractAndreaniData = extractAndreaniData;
 window.detectarTipoPDF = detectarTipoPDF;
 window.extraerDeTiendaNube = extraerDeTiendaNube;
+window.extraerDestinatario = extraerDestinatario;
 window.extraerDeAndreani = extraerDeAndreani;
